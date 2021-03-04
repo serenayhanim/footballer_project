@@ -22,7 +22,7 @@ print(match_file)
 
 create_tables()
 
-for file in match_file:
+for file in match_file[2:5]:
     path = data_path + file
     df = pd.read_csv(path, lineterminator="\n")
     insert_data(df, file)
