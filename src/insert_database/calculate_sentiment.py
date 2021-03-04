@@ -4,16 +4,25 @@ import pandas as pd
 from sqlalchemy import create_engine
 from config import config
 
-# calculate sentiment scores of tweets in remote database
-engine = create_engine(f'postgresql://{config.USERNAME}:{config.PASSWORD}@{config.IP_ADDRESS}/footballer_new')
+# engine = create_engine(f'postgresql://{config.USERNAME}:{config.PASSWORD}@{config.IP_ADDRESS}/footballer_new')
+engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_test')
 analyzer = SentimentIntensityAnalyzer()
+
+# get all tweets from tweets table.
 sentiment_df = pd.read_sql_query('select id, tweet from "tweets"', con=engine)
 
 
-def sentiment(dataframe):
+def calculate_vader_sentiment(dataframe):
+    """
+    Calculates sentiment scores of tweets and add a column for
+    each score types (compound, positive, negative). Determines type of tweet sentimentally based on compound score.
+
+    @param dataframe: dataframe
+    """
+
     dataframe['compound'] = [analyzer.polarity_scores(x)['compound'] for x in zip(dataframe['tweet'])]
-    dataframe['pos'] = [analyzer.polarity_scores(x)['pos'] for x in zip(dataframe['tweet'])]
-    dataframe['neg'] = [analyzer.polarity_scores(x)['neg'] for x in zip(dataframe['tweet'])]
+    dataframe['positive'] = [analyzer.polarity_scores(x)['pos'] for x in zip(dataframe['tweet'])]
+    dataframe['negative'] = [analyzer.polarity_scores(x)['neg'] for x in zip(dataframe['tweet'])]
     print(f"Vader columns are generated for'{dataframe}'!")
 
     dataframe['type'] = np.where(dataframe['compound'] > 0.05, 'positive',
@@ -21,11 +30,14 @@ def sentiment(dataframe):
     print(f"Type column is generated for'{dataframe}'!")
 
 
-sentiment(sentiment_df)
+def insert_data_to_vader_table(dataframe):
+    """
+    Create sentiment table dataframe from selecting id, positive, negative, compound and type columns.
+    Insert the dataframe to the vader_sentiments table.
 
-sentiment_table = sentiment_df[["id", "pos", "neg", "compound", "type"]]
-results = engine.execute('DROP TABLE IF EXISTS sentiments;')
-sentiment_table.to_sql('sentiments', engine, if_exists='append')
+    @param dataframe: dataframe
+    """
 
-# To create sentiment table
-# sentiment_table = dataframe[["id", "pos", "neg", "compound", "type"]]
+    sentiments_table = dataframe[["id", "positive", "negative", "compound", "type"]]
+    sentiments_table.to_sql('vader_sentiments', engine, if_exists='append', index=False, chunksize=100)
+
