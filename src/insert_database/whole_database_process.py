@@ -9,8 +9,8 @@ from calculate_sentiment import calculate_vader_sentiment, insert_data_to_vader_
 from update_footballer_table import update_footballers_table
 from config import config
 
-engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_test')
-# engine = create_engine(f'postgresql://{config.USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_new')
+# engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_test')
+engine = create_engine(f'postgresql://{config.USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_new')
 
 # data_path = '/Users/serenay/Documents/HateLab/footballer_project/data/collection/footballer_data_c3/'
 data_path = '/media/datalab1/Data1/serenay/footballer_project_db1/footballer_project/All_data/'
