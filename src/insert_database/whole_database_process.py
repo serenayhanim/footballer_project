@@ -1,39 +1,33 @@
-import os
-import pandas as pd
 import fnmatch
+import os
 from sqlalchemy import create_engine
+import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from create_database_tables import create_tables
-from insert_data_to_database import parse_time, insert_data
-from calculate_sentiment import calculate_vader_sentiment, insert_data_to_vader_table
-from update_footballer_table import update_footballers_table
+
+import create_database_tables as ct
+import insert_data_to_database as idd
+import calculate_sentiment as cs
+import update_footballer_table as uft
 from config import config
 
-# engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_test')
-engine = create_engine(f'postgresql://{config.USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_new')
+engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}:{config.PASSWORD}@\
+{config.LOCAL_IP_ADDRESS}/{config.DATABASE_NAME}')
+analyzer = SentimentIntensityAnalyzer()
 
-# data_path = '/Users/serenay/Documents/HateLab/footballer_project/data/collection/footballer_data_c3/'
-data_path = '/media/datalab1/Data1/serenay/footballer_project_db1/footballer_project/All_data/'
+
+data_path = config.LOCAL_DATA_PATH
 files = os.listdir(data_path)
-print(files)
-
 match_file = fnmatch.filter(files, '@*.csv')
-print(match_file)
 
-create_tables()
-
-for file in match_file[2:5]:
+ct.create_tables(engine)
+for iteration, file in enumerate(match_file[2:25]):
+    print(f"********************** writing {iteration+1} of {len(match_file[2:25])} files **************************\n")
     path = data_path + file
     df = pd.read_csv(path, lineterminator="\n")
-    insert_data(df, file)
+    idd.insert_data(df, file, engine)
 
-analyzer = SentimentIntensityAnalyzer()
 sentiment_df = pd.read_sql_query('select id, tweet from "tweets"', con=engine)
+cs.calculate_vader_sentiment(sentiment_df, analyzer)
+cs.insert_data_to_vader_table(sentiment_df, engine)
 
-calculate_vader_sentiment(sentiment_df)
-insert_data_to_vader_table(sentiment_df)
-update_footballers_table()
-
-
-
-
+uft.update_footballers_table(engine)

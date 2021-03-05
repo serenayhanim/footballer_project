@@ -1,15 +1,5 @@
 import datetime
-import os
-import pandas as pd
-import fnmatch
-from sqlalchemy import create_engine
 from pangres import upsert
-from config import config
-
-# engine = create_engine(f'postgresql://{config.LOCAL_USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_test')
-
-
-engine = create_engine(f'postgresql://{config.USERNAME}@{config.LOCAL_IP_ADDRESS}/footballer_new')
 
 
 def parse_time(time_int: int) -> str:
@@ -25,14 +15,7 @@ def parse_time(time_int: int) -> str:
     return time_stamp
 
 
-def insert_data(dataframe, csv_file):
-    """
-    insert related data to the database tables.
-
-    @param dataframe: dataframe
-    @param csv_file: csv file
-    """
-
+def insert_data(dataframe, csv_file, engine):
     users_table = dataframe[["user_id", "user_id_str", "username", "name"]]
     print(f"---------------{csv_file}users table is created---------")
     users_table.drop_duplicates(subset="user_id", inplace=True)
@@ -73,19 +56,3 @@ def insert_data(dataframe, csv_file):
     print(f"---------------{csv_file} screen_name_tweets table is created---------")
     screen_name_tweets_table.to_sql('screen_name_tweets', engine, if_exists='append', index=False, chunksize=100)
     print(f" {csv_file} Screen_name_tweets table is inserted to the database")
-
-
-# List all files in the given path
-data_path = '/media/datalab1/Data1/serenay/footballer_project_db1/footballer_project/All_data/'
-files = os.listdir(data_path)
-print(files)
-
-# list all csv files in files
-match_file = fnmatch.filter(files, '@*.csv')
-print(match_file)
-
-# create pandas dataframe for each csv file in the list and insert the data related table in the database.
-for file in match_file[2:4]:
-    path = data_path + file
-    df = pd.read_csv(path, lineterminator="\n")
-    insert_data(df, file)
